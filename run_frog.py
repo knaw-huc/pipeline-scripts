@@ -1,6 +1,9 @@
 # Runs frog on all files in argv[1] to produce NER'd FoLiA-format output
 # in the dir argv[2]. A log is kept in frog.log.
 # This uses the LaMachine Docker image.
+#
+# An example run on 1MB's worth of EAD records (142 files) took 21m14s
+# and produced 43.8MB of FoLiA output.
 
 import os
 from os.path import abspath

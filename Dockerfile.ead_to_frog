@@ -1,0 +1,14 @@
+# Usage:
+#   docker run -v $ead_dir:/ead:ro -v $foliadir:/folia $image
+#
+# $ead_dir and $foliadir need to be absolute pathnames.
+
+FROM proycon/lamachine
+
+COPY prepare_input.py  .
+COPY run_frog_docker.py .
+
+RUN mkdir /text
+CMD python prepare_input.py /ead /text && \
+    python run_frog_docker.py /text /folia && \
+    rm /text/*

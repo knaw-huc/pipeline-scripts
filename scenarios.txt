@@ -1,0 +1,53 @@
+[Scenario #1] Find Named Entities in HitimeP EAD records
+  * Get data: where is it? Supplied by IISG to Gordan.
+    (note, for the EAD 'Authority lists', Lars had to scrape/harvest them from an IISG server,
+    not used in this particular scenario yet, but this is something we run into occasionally:
+    difficulty in actually getting data in the first place)
+  ! actually, this was 'easy' as sometimes it takes weeks / months before we even get the data.
+  * Extract 'text' from EAD records. Simple xpath expression was sufficient. Loops over all
+    files in dir
+  * Run 'text' through Frog. Used LaMachine dockerfile to avoid local install of 'frog'; loops
+    over all text files
+  * Dockerize: Dockerfile with two volume mounts: EAD:ro goes in, FOLIA:rw used for results
+
+[Scenario #2] Run 'frog' on 'Gekaapte Brieven' corpus
+  * Get data: mysqldump supplied. One of the columns contained individual pages of the letters.
+    needed to collate pages of each letter to reconstruct the letter's original text.
+    This was a very intricate process which we did not repeat for this scenario, but which is
+    typical for the mess we sometimes have to go through. Several intermediate steps, requiring
+    ad-hoc scripts and mysql commands to get the data out. -> PROVENANCE keeping ?!
+    Data in mysql dump was accompanied by "letter of corrections" which Lars+Bas also applied (!)
+  * Run 'text' through Frog. Identical to previous scenario.
+  * Dockerize: in retrospect, it would have been good to dockerize the gathering of the data,
+    but as the gathering was done before we started analysing these scenarios, this step is lost.
+  + Todo: incorporate in Pergamon. 
+    fundamental issue: multiple overlapping hierarchies, currently there is a difference in
+    how these hiearchies are made available by the various tools versus how they are needed
+    in the front end. Discussion towards solving this is planned this Friday.
+
+[Scenario #3] Given "some" FoLiA document which has a given set of tags, index it in MTAS.
+  * We defined a JSON format in which to send FoLiA accompanied by meta data fields as a
+    single (JSON) object to MTAS.
+  * This assumes that the researcher's data is first transformed from whatever form it is in,
+    e.g., excel sheet, is transformed and packed into the JSON format (together with the FoLiA
+    contents) No scripting written for this step
+    ! In the past, for some collections, this has meant gathering fields from a mysql database
+  * We predefined a (there can be multiple) MTAS configuration file which contains the 'layers'
+    of the FoLiA to be indexed.
+  * We assume there already is a core specific for the person uploading the data. We construct
+    the corresponding SOLR URL using the name of this core
+  * Uploading of the FoLiA is done via a single HTTP POST (using requests lib from python) to
+    SOLR/MTAS
+  * Dockerize: as the 'requests' lib is a dependency which is not installed by default, we
+    added required installation statements to the docker file.
+  ! While executing we ran into an MTAS NPE issue, which we had to solve first .. this happens
+    a lot until we are familiar enough with the 'MTAS happy trail' code. Until then, lack
+    of understanding leads to invocations of code paths outside the happy trail, which triggers
+    all sorts of exceptions / bugs / assumption misses.
+  ! From within the docker container, the MTAS url needs to be accessible -> --network=host
+  ! Currently difficult to build a dockerized MTAS, we're working on it. Makes testing hard.
+  ! To invoke the dockerized version, you need to pass 3 command line variables and pipe in the
+    JSON (containing metadata and FoLiA) via stdin. So you would really want a script to handle
+    this elegantly. So then you have a script to do the work inside a docker container which needs
+    an external script to invoke the docker. Makes for maxing out complexity for what in essence
+    is no more than a simple 'curl' command.
